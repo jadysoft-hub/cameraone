@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>GTA Kamera</title>
-<link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Rubik:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Rubik:wght@500;700&display=swap" rel="stylesheet">
 <style>
 /* Pricedown (GTA yazı tipi) dosyasını fonts/pricedown.ttf olarak eklersen otomatik kullanılır.
-   Yoksa Rubik Mono One yedek olarak devreye girer. */
+   Yoksa Titan One yedek olarak devreye girer. */
 @font-face{font-family:"Pricedown";src:url("fonts/pricedown.ttf") format("truetype");font-display:swap}
 
-:root{--bg:#000;--fg:#fff;--gta:"Pricedown","Rubik Mono One",Impact,sans-serif}
+:root{--bg:#000;--fg:#fff;--gta:"Pricedown","Titan One",Impact,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Rubik",system-ui,sans-serif;font-weight:500}
 body{min-height:100dvh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
@@ -44,7 +44,7 @@ canvas{width:100%;height:auto;touch-action:none;cursor:move}
 
 .panel{padding:14px 0}
 .lbl{display:block;font-family:var(--gta);font-size:14px;letter-spacing:1px;margin:12px 0 6px}
-textarea{width:100%;background:#000;color:var(--fg);border:2px solid var(--fg);padding:10px;font:inherit;font-size:18px;resize:none;border-radius:0;text-transform:uppercase}
+textarea{width:100%;background:#000;color:var(--fg);border:2px solid var(--fg);padding:10px;font:inherit;font-size:18px;resize:none;border-radius:0}
 .row{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
 .row .btn.sm{flex:1}
 
@@ -81,7 +81,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;background:var(--fg);
 
     <div class="panel">
       <label class="lbl">YAZI</label>
-      <textarea id="txt" rows="2" maxlength="80" placeholder="Yazını buraya yaz">GRAND THEFT</textarea>
+      <textarea id="txt" rows="3" maxlength="80" placeholder="Yazını buraya yaz">grand
+theft
+auto</textarea>
 
       <label class="lbl">KONUM (yazıyı sürükleyebilirsin)</label>
       <div class="row">
@@ -92,9 +94,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;background:var(--fg);
       </div>
 
       <div class="slider"><span>YATAY</span><input type="range" id="x" min="0" max="100" value="50"></div>
-      <div class="slider"><span>DİKEY</span><input type="range" id="y" min="0" max="100" value="12"></div>
-      <div class="slider"><span>BOYUT</span><input type="range" id="size" min="4" max="30" value="12"></div>
-      <div class="slider"><span>KONTUR</span><input type="range" id="stroke" min="0" max="30" value="12"></div>
+      <div class="slider"><span>DİKEY</span><input type="range" id="y" min="0" max="100" value="50"></div>
+      <div class="slider"><span>BOYUT</span><input type="range" id="size" min="4" max="30" value="16"></div>
+      <div class="slider"><span>KONTUR</span><input type="range" id="stroke" min="0" max="30" value="16"></div>
+      <div class="slider"><span>EĞİM</span><input type="range" id="angle" min="-20" max="20" value="0"></div>
+      <div class="slider"><span>HARF OYNAMA</span><input type="range" id="jit" min="0" max="100" value="35"></div>
       <div class="slider"><span>KONTRAST</span><input type="range" id="contrast" min="-100" max="100" value="0"></div>
       <div class="slider"><span>PARLAKLIK</span><input type="range" id="bright" min="-100" max="100" value="0"></div>
       <div class="slider"><span>SİYAH-BEYAZ</span><input type="range" id="gray" min="0" max="100" value="0"></div>
@@ -113,13 +117,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;background:var(--fg);
 
 <script>
 const MAX_W = 1280;
-const FONT = '"Pricedown","Rubik Mono One",Impact,sans-serif';
+const FONT = '"Pricedown","Titan One",Impact,sans-serif';
 
 const $ = id => document.getElementById(id);
 const video = $('video'), camScreen = $('camScreen'), editScreen = $('editScreen');
 const cv = $('canvas'), ctx = cv.getContext('2d');
 let stream = null, facing = 'environment', base = null, procData = null, white = true, dragging = false;
-const st = { x: .5, y: .12, size: 12, stroke: 12, contrast: 0, bright: 0, gray: 0 };
+const st = { x: .5, y: .5, size: 16, stroke: 16, angle: 0, jit: 35, contrast: 0, bright: 0, gray: 0 };
 
 /* ---------- KAMERA ---------- */
 async function startCam() {
@@ -182,25 +186,42 @@ function processImage() {
 function render() {
   if (!procData) return;
   ctx.putImageData(procData, 0, 0);
-  const lines = $('txt').value.toUpperCase().split('\n').filter(l => l.trim());
+  const lines = $('txt').value.split('
+').filter(l => l.trim());
   if (!lines.length) return;
-  const px = st.size / 100 * cv.width, lh = px * 1.05;
+  const px = st.size / 100 * cv.width, lh = px * .86;
   ctx.font = px + 'px ' + FONT;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round'; ctx.miterLimit = 2;
   ctx.lineWidth = px * st.stroke / 100 * 2;
   const fill = white ? '#fff' : '#000', line = white ? '#000' : '#fff';
-  const y0 = st.y * cv.height - (lines.length - 1) * lh / 2;
-  lines.forEach((t, i) => {
-    const x = st.x * cv.width, y = y0 + i * lh;
-    if (st.stroke > 0) {
-      ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = px * .12; ctx.shadowOffsetY = px * .07;
-      ctx.strokeStyle = line; ctx.strokeText(t, x, y);
+  const j = st.jit / 100;
+  ctx.save();
+  ctx.translate(st.x * cv.width, st.y * cv.height);
+  ctx.rotate(st.angle * Math.PI / 180);
+  const y0 = -(lines.length - 1) * lh / 2;
+  const pass = (stroke) => lines.forEach((t, li) => {
+    const chars = [...t];
+    const ws = chars.map(c => ctx.measureText(c).width);
+    let x = -ws.reduce((a, b) => a + b, 0) / 2;
+    chars.forEach((c, i) => {
+      const r = Math.sin((li * 31 + i * 17 + 1) * 12.9898) * 43758.5453; // sabit sahte rastgele
+      const f = r - Math.floor(r) - .5;
+      const cx = x + ws[i] / 2, cy = y0 + li * lh + f * px * .14 * j;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(f * .22 * j); ctx.textAlign = 'center';
+      if (stroke) ctx.strokeText(c, 0, 0); else ctx.fillText(c, 0, 0);
       ctx.restore();
-    }
-    ctx.fillStyle = fill; ctx.fillText(t, x, y);
+      x += ws[i];
+    });
   });
+  if (st.stroke > 0) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = px * .1; ctx.shadowOffsetY = px * .06;
+    ctx.strokeStyle = line; pass(true);
+    ctx.restore();
+  }
+  ctx.fillStyle = fill; pass(false);
+  ctx.restore();
 }
 
 /* ---------- KONTROLLER ---------- */
@@ -214,6 +235,8 @@ function syncPos() { $('x').value = st.x * 100; $('y').value = st.y * 100; }
 $('x').oninput = e => { st.x = e.target.value / 100; render(); };
 $('y').oninput = e => { st.y = e.target.value / 100; render(); };
 $('size').oninput = e => { st.size = +e.target.value; render(); };
+$('angle').oninput = e => { st.angle = +e.target.value; render(); };
+$('jit').oninput = e => { st.jit = +e.target.value; render(); };
 $('stroke').oninput = e => { st.stroke = +e.target.value; render(); };
 ['contrast', 'bright', 'gray'].forEach(k => $(k).oninput = e => { st[k] = +e.target.value; processImage(); });
 
@@ -249,7 +272,7 @@ $('share').onclick = async () => {
 };
 
 /* ---------- BAŞLAT ---------- */
-Promise.all([document.fonts.load('40px "Pricedown"'), document.fonts.load('40px "Rubik Mono One"')])
+Promise.all([document.fonts.load('40px "Pricedown"'), document.fonts.load('40px "Titan One"')])
   .catch(() => {}).finally(() => { render(); });
 startCam();
 
