@@ -73,6 +73,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;background:var(--fg);
       <button id="shutter" aria-label="Fotoğraf çek"></button>
       <label class="btn sm">GALERİ<input type="file" id="fileIn" accept="image/*" hidden></label>
     </div>
+    <div class="row">
+      <button class="btn" id="retryCam">KAMERAYI TEKRAR DENE</button>
+      <label class="btn">SİSTEM KAMERASI<input type="file" id="capIn" accept="image/*" capture="environment" hidden></label>
+    </div>
   </section>
 
   <!-- DÜZENLEME EKRANI -->
@@ -128,14 +132,21 @@ const st = { x: .5, y: .5, size: 16, stroke: 16, angle: 0, jit: 35, contrast: 0,
 /* ---------- KAMERA ---------- */
 async function startCam() {
   stopCam();
-  $('camMsg').textContent = '';
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
-    video.srcObject = stream;
-  } catch (e) {
-    $('camMsg').textContent = 'KAMERA AÇILAMADI. İZİN VER VEYA GALERİDEN FOTOĞRAF SEÇ.';
+  const msg = $('camMsg'); msg.textContent = '';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    msg.textContent = 'KAMERA ERİŞİMİ YOK. SAYFA HTTPS İLE AÇILMALI VEYA WEBVIEW KAMERA İZNİ VERMELİ. ALTTAKİ SİSTEM KAMERASINI KULLAN.';
+    return;
   }
+  let err = null;
+  for (const v of [{ facingMode: { ideal: facing } }, true]) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: v, audio: false });
+      video.srcObject = stream;
+      try { await video.play(); } catch (e) {}
+      return;
+    } catch (e) { err = e; }
+  }
+  msg.textContent = 'KAMERA AÇILAMADI (' + (err && err.name) + '). İZNİ KONTROL ET, SONRA TEKRAR DENE.';
 }
 function stopCam() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } }
 
@@ -144,7 +155,8 @@ $('shutter').onclick = () => {
   if (!video.videoWidth) return;
   loadSource(video, video.videoWidth, video.videoHeight, facing === 'user');
 };
-$('fileIn').onchange = e => {
+$('retryCam').onclick = startCam;
+$('capIn').onchange = $('fileIn').onchange = e => {
   const f = e.target.files[0]; if (!f) return;
   const img = new Image();
   img.onload = () => { loadSource(img, img.naturalWidth, img.naturalHeight, false); URL.revokeObjectURL(img.src); };
