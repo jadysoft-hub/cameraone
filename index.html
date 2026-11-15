@@ -198,8 +198,7 @@ function processImage() {
 function render() {
   if (!procData) return;
   ctx.putImageData(procData, 0, 0);
-  const lines = $('txt').value.split('
-').filter(l => l.trim());
+  const lines = $('txt').value.split('\n').filter(l => l.trim());
   if (!lines.length) return;
   const px = st.size / 100 * cv.width, lh = px * .86;
   ctx.font = px + 'px ' + FONT;
